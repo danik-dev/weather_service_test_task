@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  database:
+    container_name: weather_service_cont
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: weather_service
+    volumes:
+      - ./data/postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+
+  maven-build:
+    image: maven:3.9
+    container_name: maven-build-container_test
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: [ "mvn", "clean", "install" ]
+
+  spring-docker:
+    image: openjdk:17
+    container_name: spring-docker-container
+    volumes:
+      - ./target:/app
+    ports:
+      - 8080:8080
+    command: [ "java", "-jar", "/app/weather_service-0.0.1-SNAPSHOT.jar", "--datasource.host=weather_service_cont" ]
+
+    depends_on:
+      maven-build:
+        condition: service_completed_successfully
